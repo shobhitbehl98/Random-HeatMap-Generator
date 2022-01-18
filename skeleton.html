@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Heat Map</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        font-family:'calibri';
+      }
+      .chartMenu {
+        width: 100vw;
+        height: 40px;
+        background: #000000;
+        color: rgb(0, 21, 255);
+      }
+      .chartMenu p {
+        padding: 10px;
+        font-size: 20px;
+      }
+      .chartCard {
+        width: 100vw;
+        height: calc(100vh - 40px);
+        background: rgba(0, 0, 45,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .chartBox {
+        width: 1200px;
+        height:250px;
+        /* border-radius: 20px; */
+        border: solid 2px rgb(105, 7, 37);
+        background: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chartMenu">
+      <p><b>Random Heat Map Generator</b></p>
+    </div>
+    <div class="chartCard">
+      <div class="chartBox">
+        <canvas id="myChart"></canvas>
+        <!-- <button onclick="generateData()">Test</button> -->
+      </div>
+    </div>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.1.1/dist/chartjs-chart-matrix.min.js"></script>
+    <script>
+
+      function isD(dt){
+      let wd = dt.getDay();//0..6
+      wd=(wd+6)%7 + 1
+      return ''+wd;//string so it gets parsed
+    };
+
+    // setup of date 365 squares
+    function generateData(){
+        const d=new Date();
+        const today=new Date(d.getFullYear(),d.getMonth(),d.getDate(),0,0,0,0);
+        const data2=[];
+        const end=today;
+        let dt=new Date(new Date().setDate(end.getDate()-365));
+        while(dt<=end){
+          const iso=dt.toISOString().substr(0,10);
+          data2.push({
+            x: iso,
+            y:isD(dt),
+            d:iso,
+            v:Math.random()*100
+          });
+          dt=new Date(dt.setDate(dt.getDate()+1));
+        }
+        // console.log(data2);
+        return data2;
+    }
+
+    // setup block
+    const data={
+      datasets:[{
+        label: 'Heat Map',
+        data:generateData(),
+        backgroundColor(c){
+          const value = c.dataset.data[c.dataIndex].v;
+          const alpha = (16+value)/100
+          return `rgba(50,55,190,${alpha})`;
+        },
+        borderColor:'blue',
+        borderWidth:1,
+        hoverBackgroundColor:'blue',
+        hoverBorderColor:'blue',
+        width(c){
+          const a=c.chart.chartArea || {};
+          return (a.right-a.left) /53 - 1;
+        },
+        height(c){
+          const a=c.chart.chartArea || {};
+          return (a.bottom-a.top) /7 - 1;
+        }, 
+      }]
+    }
+    
+    // scales block
+    const scales={
+      y:{
+        type:'time',
+        offset:true,
+        time:{
+          unit:'day',
+          round:'day',
+          isoWeek: 1,
+          parser: 'i',
+          displayFormats: {
+            day:'iiii'
+          }
+        },
+        reserve:true,
+        position: 'right',
+        ticks:{
+          maxRotation: 0,
+          autoSkip: true,
+          padding :1,
+          font:{
+            size:16
+          }
+        },
+        grid:{
+          display:false,
+          drawBorder:false,
+          tickLength:0,
+        }
+      },
+      x:{
+        type:'time',
+        position:'bottom',
+        offset:'true',
+        time:{
+          unit:'week',
+          round:'week',
+          isD:1,
+          displayFormats:{
+            week:'MMM-dd'
+          },
+          
+        },
+        ticks:{
+          autoSkip: true,
+          padding :0,
+          font:{
+            size:16
+          }
+        },
+      }
+    }
+
+    // config 
+    const config = {
+      type: 'matrix',
+      data,
+      options: {
+        maintainAspectRatio:false,
+        scales: scales, 
+        plugins:{
+          legend:{
+            display:false
+          },
+        }
+      }
+    };
+
+    // render init block
+    const myChart = new Chart(
+      document.getElementById('myChart'),
+      config
+    );
+    </script>
+
+  </body>
+</html>
